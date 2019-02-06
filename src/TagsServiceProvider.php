@@ -24,11 +24,4 @@ class TagsServiceProvider extends ServiceProvider
             ], 'config');
         }
     }
-
-    /**
-     * Register the application services.
-     */
-    public function register()
-    {
-    }
 }

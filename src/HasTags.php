@@ -28,8 +28,7 @@ trait HasTags
 
     public function tags(): MorphToMany
     {
-        return $this
-            ->morphToMany(self::getTagClassName(), 'taggable')
+        return $this->morphToMany(self::getTagClassName(), 'taggable')
             ->orderBy('order_column');
     }
 
@@ -51,17 +50,16 @@ trait HasTags
      * @param \Illuminate\Database\Eloquent\Builder $query
      * @param array|\ArrayAccess|\Spatie\Tags\Tag $tags
      *
+     * @param string|null $type
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeWithAllTags(Builder $query, $tags, string $type = null): Builder
     {
-        $tags = static::convertToTags($tags, $type);
-
-        collect($tags)->each(function ($tag) use ($query) {
+        foreach (static::convertToTags($tags, $type) as $tag) {
             $query->whereHas('tags', function (Builder $query) use ($tag) {
                 return $query->where('id', $tag ? $tag->id : 0);
             });
-        });
+        }
 
         return $query;
     }
@@ -70,15 +68,14 @@ trait HasTags
      * @param \Illuminate\Database\Eloquent\Builder $query
      * @param array|\ArrayAccess|\Spatie\Tags\Tag $tags
      *
+     * @param string|null $type
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeWithAnyTags(Builder $query, $tags, string $type = null): Builder
     {
-        $tags = static::convertToTags($tags, $type);
+        $tagIds =  collect(static::convertToTags($tags, $type))->pluck('id');
 
-        return $query->whereHas('tags', function (Builder $query) use ($tags) {
-            $tagIds = collect($tags)->pluck('id');
-
+        return $query->whereHas('tags', function (Builder $query) use ($tagIds) {
             $query->whereIn('id', $tagIds);
         });
     }
@@ -123,13 +120,9 @@ trait HasTags
      */
     public function detachTags($tags)
     {
-        $tags = static::convertToTags($tags);
-
-        collect($tags)
-            ->filter()
-            ->each(function (Tag $tag) {
-                $this->tags()->detach($tag);
-            });
+        collect(static::convertToTags($tags))->each(function (Tag $tag) {
+            $this->tags()->detach($tag);
+        });
 
         return $this;
     }
@@ -153,9 +146,7 @@ trait HasTags
     {
         $className = static::getTagClassName();
 
-        $tags = collect($className::findOrCreate($tags));
-
-        $this->tags()->sync($tags->pluck('id')->toArray());
+        $this->tags()->sync(collect($className::findOrCreate($tags))->pluck('id')->toArray());
 
         return $this;
     }
@@ -170,9 +161,7 @@ trait HasTags
     {
         $className = static::getTagClassName();
 
-        $tags = collect($className::findOrCreate($tags, $type));
-
-        $this->syncTagIds($tags->pluck('id')->toArray(), $type);
+        $this->syncTagIds(collect($className::findOrCreate($tags, $type))->pluck('id')->toArray(), $type);
 
         return $this;
     }

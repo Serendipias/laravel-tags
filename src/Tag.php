@@ -25,7 +25,7 @@ class Tag extends Model implements Sortable
 
     /**
      * @param array|\ArrayAccess $values
-     * @param string|null $type
+     * @param string $type
      *
      * @return \Spatie\Tags\Tag|static
      */
@@ -57,15 +57,6 @@ class Tag extends Model implements Sortable
 
     protected static function findOrCreateFromString(string $name, string $type = null): self
     {
-        $tag = static::findFromString($name, $type);
-
-        if (! $tag) {
-            $tag = static::create([
-                'name' => $name,
-                'type' => $type,
-            ]);
-        }
-
-        return $tag;
+        return static::findFromString($name, $type) ?: static::create(['name' => $name, 'type' => $type]);
     }
 }
